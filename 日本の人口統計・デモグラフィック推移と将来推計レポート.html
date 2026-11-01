@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日本の人口統計・デモグラフィック推移と将来推計レポート</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    }
+    .tab-active {
+      border-color: #2563eb;
+      color: #2563eb;
+      background-color: #eff6ff;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      .tab-content { display: block !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">公的統計データ分析</span>
+            <span class="text-xs text-slate-500">実績：1950〜2024年 / 将来推計：2025〜2070年</span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
+            日本の人口動態・デモグラフィック分析レポート
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-600 mt-1">
+            出典：総務省統計局「国勢調査・人口推計」、国立社会保障・人口問題研究所「日本の将来推計人口（令和5年推計）」「世帯数の将来推計（令和6年推計）」
+          </p>
+        </div>
+        <div class="flex items-center gap-3 no-print">
+          <button id="download-csv-btn" class="inline-flex items-center px-3.5 py-2 border border-slate-300 shadow-sm text-xs sm:text-sm font-medium rounded-lg text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+            <svg class="w-4 h-4 mr-1.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            CSV保存
+          </button>
+          <button id="print-btn" class="inline-flex items-center px-3.5 py-2 border border-transparent shadow-sm text-xs sm:text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+            </svg>
+            印刷 / PDF出力
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex space-x-2 mt-4 overflow-x-auto no-print border-t border-slate-200 pt-3" aria-label="Tabs">
+        <button data-tab="summary" class="tab-btn tab-active px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg border border-transparent hover:text-blue-600 transition-all whitespace-nowrap">
+          総合サマリー &amp; KPI
+        </button>
+        <button data-tab="age3" class="tab-btn text-slate-600 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg border border-transparent hover:text-blue-600 transition-all whitespace-nowrap">
+          年齢3区分・構造推移
+        </button>
+        <button data-tab="gender-foreign" class="tab-btn text-slate-600 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg border border-transparent hover:text-blue-600 transition-all whitespace-nowrap">
+          男女比 &amp; 外国人動向
+        </button>
+        <button data-tab="household" class="tab-btn text-slate-600 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg border border-transparent hover:text-blue-600 transition-all whitespace-nowrap">
+          世帯構造・単身化
+        </button>
+        <button data-tab="scenarios" class="tab-btn text-slate-600 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg border border-transparent hover:text-blue-600 transition-all whitespace-nowrap">
+          2070年シナリオ分岐
+        </button>
+        <button data-tab="datatable" class="tab-btn text-slate-600 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg border border-transparent hover:text-blue-600 transition-all whitespace-nowrap">
+          全データ一覧表
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+    <!-- TAB 1: 総合サマリー & KPI -->
+    <section id="tab-summary" class="tab-content space-y-6">
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1 -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-colors">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider">
+            <span>総人口（2024年確定値）</span>
+            <span class="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">1億2,380万人</span>
+          </div>
+          <p class="text-xs text-rose-600 font-medium mt-1">前年比 -55万人（-0.44%・14年連続減）</p>
+          <div class="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+            2008年ピーク（1億2,808万人）から約428万人減少
+          </div>
+        </div>
+
+        <!-- KPI 2 -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-amber-300 transition-colors">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider">
+            <span>高齢化率（65歳以上）</span>
+            <span class="inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-extrabold text-amber-600">29.3%</span>
+            <span class="text-xs text-slate-500">3,624万人</span>
+          </div>
+          <p class="text-xs text-amber-700 font-medium mt-1">うち75歳以上が 2,078万人（16.8%）</p>
+          <div class="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+            2070年には総人口の38.7%（約2.6人に1人）へ
+          </div>
+        </div>
+
+        <!-- KPI 3 -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-300 transition-colors">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider">
+            <span>生産年齢人口（15〜64歳）</span>
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">7,373万人</span>
+            <span class="text-xs text-slate-500">59.6%</span>
+          </div>
+          <p class="text-xs text-slate-600 font-medium mt-1">1995年ピーク（8,717万人）比 -1,344万人</p>
+          <div class="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+            2070年には4,535万人（52.1%）まで半減水準
+          </div>
+        </div>
+
+        <!-- KPI 4 -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300 transition-colors">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider">
+            <span>年少人口（0〜14歳）</span>
+            <span class="inline-block w-2 h-2 rounded-full bg-purple-500"></span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-extrabold text-purple-600">1,383万人</span>
+            <span class="text-xs text-slate-500">11.2%</span>
+          </div>
+          <p class="text-xs text-rose-600 font-medium mt-1">過去最低を更新（43年連続減少）</p>
+          <div class="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+            1950年（2,943万人・35.4%）から半減以下
+          </div>
+        </div>
+      </div>
+
+      <!-- Overview Context & Key Milestones -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            エグゼクティブ・サマリー：日本が直面する構造転換
+          </h2>
+          <p class="text-sm text-slate-700 leading-relaxed">
+            日本のデモグラフィックは、戦後の急激な多産少死から「少子化」と「超長寿化」が並行して進展し、世界に先駆けて類を見ない人口構造の激変を経験しています。
+            生産年齢人口は1995年に、総人口は2008年にそれぞれピークを越え、現在は<strong>「自然減の拡大（年間約80〜90万人減）」</strong>の加速局面にあります。
+          </p>
+          <p class="text-sm text-slate-700 leading-relaxed">
+            今後の最大の特徴は、単なる「人口減」ではなく<strong>「現役世代急減と超高齢化の同時進行」</strong>です。2025年に団塊の世代が全員75歳以上となり、2040年代前半には第2次ベビーブーム世代が高齢期に入ることで高齢者実数が約3,953万人でピークを迎えます。支え手となる生産年齢人口は2070年にかけて約4,535万人まで縮小し、社会保障・経済規模・地域コミュニティの前提条件が劇的に変容します。
+          </p>
+
+          <div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r-lg mt-3">
+            <h3 class="text-xs font-bold text-blue-900 uppercase tracking-wide">注目の転換点（マイルストーン）</h3>
+            <ul class="mt-2 space-y-1.5 text-xs text-blue-800">
+              <li class="flex items-start gap-1.5">
+                <span class="font-bold">• 1995年：</span>生産年齢人口がピーク（8,717万人）を迎え、減少へ転換。
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="font-bold">• 2008年：</span>日本の総人口が1億2,808万人で過去最高に到達し、人口減少社会に突入。
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="font-bold">• 2025年：</span>団塊の世代（1947〜49年生）全員が75歳以上の後期高齢者に（「2025年問題」）。
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="font-bold">• 2043年：</span>65歳以上人口が3,953万人でピークに達し、現役世代の負担が最大化（「2040年問題」）。
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="font-bold">• 2048年：</span>日本人人口が1億人を割り込む（社人研中位推計：9,960万人）。
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="font-bold">• 2056年：</span>外国人を含む総人口が1億人を割り込む（9,965万人）。
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="font-bold">• 2070年：</span>総人口は8,700万人まで縮小、高齢化率は38.7%、外国人が総人口の10.8%を占める。
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Demographic Shift Highlights -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 mb-3">人口ピラミッド構造の変化</h2>
+            <div class="space-y-4 text-xs text-slate-600">
+              <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                <span class="font-bold text-slate-800 text-sm">1950年：富士山型</span>
+                <p class="mt-1">年少人口比率が35.4%と高く、高齢化率は4.9%に過ぎず、子どもの多い典型的な発展期ピラミッド。</p>
+              </div>
+              <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                <span class="font-bold text-slate-800 text-sm">1990年：釣鐘型</span>
+                <p class="mt-1">高度成長を経て生産年齢人口比率が約70%と「人口ボーナス」の恩恵を最大享受した時期。</p>
+              </div>
+              <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                <span class="font-bold text-slate-800 text-sm">2024〜2070年：逆三角形・つぼ型</span>
+                <p class="mt-1">下部（子ども）が著しく細く、上部（75歳以上・85歳以上）が膨らむ「逆ピラミッド型」へ構造転換。</p>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-slate-200">
+            <span class="text-xs font-bold text-slate-700">潜在扶養指数（現役何人で高齢者1人を支えるか）</span>
+            <div class="grid grid-cols-3 gap-2 text-center mt-2">
+              <div class="bg-slate-100 p-2 rounded">
+                <div class="text-xs text-slate-500">1970年</div>
+                <div class="text-sm font-extrabold text-slate-800">9.8人</div>
+              </div>
+              <div class="bg-slate-100 p-2 rounded">
+                <div class="text-xs text-slate-500">2024年</div>
+                <div class="text-sm font-extrabold text-blue-600">2.0人</div>
+              </div>
+              <div class="bg-slate-100 p-2 rounded">
+                <div class="text-xs text-slate-500">2070年</div>
+                <div class="text-sm font-extrabold text-rose-600">1.3人</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: 年齢3区分・構造推移 -->
+    <section id="tab-age3" class="tab-content hidden space-y-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-2">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">年齢3区分別 人口推移（1950年〜2070年）</h2>
+            <p class="text-xs text-slate-500">単位：万人（※2020年までは国勢調査、2024年は人口推計確定値、2030年以降は社人研令和5年中位推計）</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="inline-flex items-center gap-1 text-slate-600">
+              <span class="w-3 h-3 bg-purple-500 rounded"></span>0〜14歳
+            </span>
+            <span class="inline-flex items-center gap-1 text-slate-600">
+              <span class="w-3 h-3 bg-blue-500 rounded"></span>15〜64歳
+            </span>
+            <span class="inline-flex items-center gap-1 text-slate-600">
+              <span class="w-3 h-3 bg-amber-500 rounded"></span>65歳以上
+            </span>
+            <span class="inline-flex items-center gap-1 text-slate-600">
+              <span class="w-3 h-3 bg-red-400 rounded"></span>（再掲）75歳以上
+            </span>
+          </div>
+        </div>
+        <div class="relative h-80 sm:h-96 mt-4">
+          <canvas id="ageTrendChart"></canvas>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-2">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">年齢3区分 構成比率（%）の推移</h2>
+            <p class="text-xs text-slate-500">全体に占める割合の推移（100%積み上げ）</p>
+          </div>
+        </div>
+        <div class="relative h-72 sm:h-80 mt-4">
+          <canvas id="ageRatioChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: 男女比 & 外国人動向 -->
+    <section id="tab-gender-foreign" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Gender Breakdown -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <h2 class="text-lg font-bold text-slate-900">男女別・人口性比の特徴</h2>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            日本の性比（女性100人に対する男性の数）は、年齢層によって大きく乖離します。出生時の自然性比は男児が約105と高いものの、平均寿命の差（男性約81.1歳、女性約87.1歳）により、高齢層では女性が圧倒的多数となります。
+          </p>
+          <div class="relative h-64">
+            <canvas id="genderComparisonChart"></canvas>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center text-xs pt-3 border-t border-slate-100">
+            <div class="p-2 bg-slate-50 rounded">
+              <span class="text-slate-500 block">15歳未満性比</span>
+              <span class="font-bold text-sm text-slate-800">105.0</span>
+              <span class="text-slate-400 block text-[10px]">男児多数</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded">
+              <span class="text-slate-500 block">15〜64歳性比</span>
+              <span class="font-bold text-sm text-slate-800">103.3</span>
+              <span class="text-slate-400 block text-[10px]">ほぼ均衡</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded">
+              <span class="text-slate-500 block">65歳以上性比</span>
+              <span class="font-bold text-sm text-rose-600">76.5</span>
+              <span class="text-rose-500 block text-[10px]">女性大幅多数</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500">
+            ※2024年推計における高齢者数：男性 1,568万人に対し、女性 2,051万人（女性が約483万人多い）。
+          </p>
+        </div>
+
+        <!-- Foreign Population Trend -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <h2 class="text-lg font-bold text-slate-900">国籍別人口（日本人 vs 外国人）と構成比</h2>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            日本人人口の自然減が進む中、外国人居住者の純流入が人口減少速度を緩和する構造が強まっています。2070年には総人口の1割以上（10.8%）を外国人が占めると推計されています。
+          </p>
+          <div class="relative h-64">
+            <canvas id="foreignPopulationChart"></canvas>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center text-xs pt-3 border-t border-slate-100">
+            <div class="p-2 bg-slate-50 rounded">
+              <span class="text-slate-500 block">2020年</span>
+              <span class="font-bold text-sm text-slate-800">275万人 (2.2%)</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded">
+              <span class="text-slate-500 block">2050年推計</span>
+              <span class="font-bold text-sm text-blue-600">729万人 (7.0%)</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded">
+              <span class="text-slate-500 block">2070年推計</span>
+              <span class="font-bold text-sm text-blue-800">939万人 (10.8%)</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500">
+            ※日本人人口単独では2048年に1億人を割り込み、2070年には7,761万人まで縮小する見込み。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: 世帯構造・単身化 -->
+    <section id="tab-household" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-2">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">世帯類型別の構成割合推移（1990年〜2050年）</h2>
+              <p class="text-xs text-slate-500">出典：社人研「日本の世帯数の将来推計（令和6年推計）」</p>
+            </div>
+          </div>
+          <div class="relative h-72 sm:h-80">
+            <canvas id="householdStructureChart"></canvas>
+          </div>
+          <p class="text-xs text-slate-600">
+            昭和期の標準的家族モデルであった「夫婦と子」世帯は、1990年の39.5%から2050年には21.5%へと半減。代わって「単身世帯（一人暮らし）」が44.3%へと急拡大します。
+          </p>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4 flex flex-col justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 mb-2">単身化・孤立化の深刻化</h2>
+            <div class="space-y-3 text-xs text-slate-700">
+              <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <span class="font-bold text-amber-900 block text-sm">2050年：全世帯の44.3%が単身</span>
+                <p class="mt-1 text-amber-800">約2.3世帯に1世帯が単独世帯に。東京都など大都市圏では既に過半数が単身世帯。</p>
+              </div>
+              <div class="p-3 bg-rose-50 border border-rose-200 rounded-lg">
+                <span class="font-bold text-rose-900 block text-sm">高齢単身世帯：約1,491万世帯</span>
+                <p class="mt-1 text-rose-800">65歳以上の単身世帯が全世帯の約20.6%を占め、高齢世帯の45.1%がひとり暮らしに。</p>
+              </div>
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <span class="font-bold text-slate-900 block text-sm">生涯未婚率の上昇による影響</span>
+                <p class="mt-1 text-slate-600">従来の「配偶者との死別による単身化」だけでなく、「未婚のまま高齢期を迎える単身高齢者」が急増。</p>
+              </div>
+            </div>
+          </div>
+          <div class="pt-3 border-t border-slate-200 text-xs text-slate-500">
+            身元保証・孤独死・認知症ケア・空き家増加など、従来の「家族介護」を前提とした社会制度の抜本的転換が必要とされています。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: 2070年シナリオ分岐 -->
+    <section id="tab-scenarios" class="tab-content hidden space-y-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-2">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">2070年 将来シナリオ分岐シミュレーター</h2>
+            <p class="text-xs text-slate-500">出生仮定（高位・中位・低位）と死亡仮定による推計の幅</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="scenario-select" class="text-xs font-semibold text-slate-700">シナリオ選択:</label>
+            <select id="scenario-select" class="text-xs font-medium border border-slate-300 rounded-lg p-2 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="medium">出生中位・死亡中位（標準）</option>
+              <option value="high">出生高位・死亡中位（出生回復）</option>
+              <option value="low">出生低位・死亡中位（少子化加速）</option>
+              <option value="max_aging">出生低位・死亡低位（最大高齢化）</option>
+              <option value="max_pop">出生高位・死亡低位（最大人口）</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Dynamic Scenario Card -->
+        <div id="scenario-details-card" class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-5 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <span id="sc-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white">標準シナリオ</span>
+            <h3 id="sc-title" class="text-xl font-extrabold text-slate-900 mt-1">出生中位・死亡中位 推計</h3>
+            <p id="sc-desc" class="text-xs text-slate-600 mt-1">
+              合計特殊出生率 1.36 / 平均寿命 男 85.89歳・女 91.94歳
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-4 text-center">
+            <div class="bg-white px-4 py-2.5 rounded-lg border border-slate-200 shadow-sm">
+              <div class="text-[11px] text-slate-500 font-medium">2070年 総人口</div>
+              <div id="sc-pop" class="text-xl font-extrabold text-slate-900">8,700万人</div>
+            </div>
+            <div class="bg-white px-4 py-2.5 rounded-lg border border-slate-200 shadow-sm">
+              <div class="text-[11px] text-slate-500 font-medium">65歳以上割合</div>
+              <div id="sc-aging" class="text-xl font-extrabold text-amber-600">38.7%</div>
+            </div>
+            <div class="bg-white px-4 py-2.5 rounded-lg border border-slate-200 shadow-sm">
+              <div class="text-[11px] text-slate-500 font-medium">生産年齢比率</div>
+              <div id="sc-prod" class="text-xl font-extrabold text-blue-600">52.1%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scenarios Comparison Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+          <div>
+            <h4 class="text-sm font-bold text-slate-800 mb-2">2070年 総人口のシナリオ比較（万人）</h4>
+            <div class="relative h-64">
+              <canvas id="scenarioPopChart"></canvas>
+            </div>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-slate-800 mb-2">2070年 高齢化率のシナリオ比較（%）</h4>
+            <div class="relative h-64">
+              <canvas id="scenarioAgingChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: 全データ一覧表 -->
+    <section id="tab-datatable" class="tab-content hidden space-y-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">日本の人口動態 詳細データテーブル（1950〜2070年）</h2>
+            <p class="text-xs text-slate-500">国勢調査・人口推計実績および社人研中位推計</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-600 font-medium">フィルター:</span>
+            <button id="filter-all-btn" class="filter-btn px-2.5 py-1 text-xs font-semibold rounded bg-blue-600 text-white">すべて</button>
+            <button id="filter-hist-btn" class="filter-btn px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 text-slate-700 hover:bg-slate-200">過去実績のみ</button>
+            <button id="filter-proj-btn" class="filter-btn px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 text-slate-700 hover:bg-slate-200">将来推計のみ</button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-xs text-left" id="main-data-table">
+            <thead class="bg-slate-50 text-slate-600 font-semibold uppercase">
+              <tr>
+                <th class="py-3 px-3">年次</th>
+                <th class="py-3 px-3">区分</th>
+                <th class="py-3 px-3 text-right">総人口 (万人)</th>
+                <th class="py-3 px-3 text-right">年少 (0〜14歳)</th>
+                <th class="py-3 px-3 text-right">年少割合</th>
+                <th class="py-3 px-3 text-right">生産年齢 (15〜64歳)</th>
+                <th class="py-3 px-3 text-right">生産年齢割合</th>
+                <th class="py-3 px-3 text-right">老年 (65歳以上)</th>
+                <th class="py-3 px-3 text-right">高齢化率</th>
+                <th class="py-3 px-3 text-right">うち75歳以上</th>
+              </tr>
+            </thead>
+            <tbody id="table-body" class="divide-y divide-slate-100">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Methodology & Sources Section -->
+    <footer class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3 text-xs text-slate-600">
+      <h3 class="text-sm font-bold text-slate-900">データ出典および統計注記</h3>
+      <ul class="list-disc list-inside space-y-1.5 text-slate-600">
+        <li>
+          <strong>過去実績データ（1950年〜2020年）：</strong>総務省統計局「国勢調査」（各年10月1日現在）。1970年以前は沖縄県を含みません。2020年は不詳補完結果に基づきます。
+        </li>
+        <li>
+          <strong>最新実績データ（2021年〜2024年）：</strong>総務省統計局「人口推計」（各年10月1日現在確定値）。
+        </li>
+        <li>
+          <strong>将来推計人口（2025年〜2070年）：</strong>国立社会保障・人口問題研究所『日本の将来推計人口（令和5年推計）』（2023年4月公表）出生中位・死亡中位推計（標準仮定）。
+        </li>
+        <li>
+          <strong>世帯数の将来推計：</strong>国立社会保障・人口問題研究所『日本の世帯数の将来推計（全国推計）』（令和6(2024)年4月公表）。
+        </li>
+        <li>
+          単位未満の端数処理（四捨五入）により、各内訳の合計値が総数と一致しない場合があります。
+        </li>
+      </ul>
+    </footer>
+
+  </main>
+
+  <script>
+    // Demographic Master Data
+    const dataset = [
+      { year: 1950, type: "実績", total: 8320, youth: 2943, youthPct: 35.4, work: 4966, workPct: 59.7, old: 411, oldPct: 4.9, lateOld: null },
+      { year: 1960, type: "実績", total: 9342, youth: 2807, youthPct: 30.0, work: 6000, workPct: 64.2, old: 535, oldPct: 5.7, lateOld: null },
+      { year: 1970, type: "実績", total: 10372, youth: 2482, youthPct: 23.9, work: 7157, workPct: 69.0, old: 733, oldPct: 7.1, lateOld: 224 },
+      { year: 1980, type: "実績", total: 11706, youth: 2751, youthPct: 23.5, work: 7884, workPct: 67.3, old: 1065, oldPct: 9.1, lateOld: 367 },
+      { year: 1990, type: "実績", total: 12361, youth: 2249, youthPct: 18.2, work: 8590, workPct: 69.5, old: 1490, oldPct: 12.1, lateOld: 602 },
+      { year: 1995, type: "実績", total: 12557, youth: 2001, youthPct: 15.9, work: 8717, workPct: 69.4, old: 1826, oldPct: 14.5, lateOld: 754 },
+      { year: 2000, type: "実績", total: 12693, youth: 1847, youthPct: 14.6, work: 8622, workPct: 67.9, old: 2201, oldPct: 17.3, lateOld: 901 },
+      { year: 2005, type: "実績", total: 12777, youth: 1752, youthPct: 13.7, work: 8409, workPct: 65.8, old: 2567, oldPct: 20.1, lateOld: 1160 },
+      { year: 2010, type: "実績", total: 12806, youth: 1680, youthPct: 13.1, work: 8103, workPct: 63.3, old: 2925, oldPct: 22.8, lateOld: 1418 },
+      { year: 2015, type: "実績", total: 12710, youth: 1589, youthPct: 12.5, work: 7629, workPct: 60.0, old: 3347, oldPct: 26.3, lateOld: 1632 },
+      { year: 2020, type: "実績", total: 12615, youth: 1503, youthPct: 11.9, work: 7509, workPct: 59.5, old: 3603, oldPct: 28.6, lateOld: 1860 },
+      { year: 2024, type: "実績", total: 12380, youth: 1383, youthPct: 11.2, work: 7373, workPct: 59.6, old: 3624, oldPct: 29.3, lateOld: 2078 },
+      { year: 2030, type: "推計", total: 12011, youth: 1281, youthPct: 10.7, work: 7310, workPct: 60.9, old: 3420, oldPct: 28.5, lateOld: 2288 },
+      { year: 2040, type: "推計", total: 11283, youth: 1170, youthPct: 10.4, work: 6213, workPct: 55.1, old: 3900, oldPct: 34.6, lateOld: 2239 },
+      { year: 2043, type: "推計", total: 11044, youth: 1135, youthPct: 10.3, work: 5956, workPct: 53.9, old: 3953, oldPct: 35.8, lateOld: 2284 },
+      { year: 2050, type: "推計", total: 10469, youth: 1041, youthPct: 9.9, work: 5540, workPct: 52.9, old: 3888, oldPct: 37.1, lateOld: 2446 },
+      { year: 2060, type: "推計", total: 9614, youth: 916, youthPct: 9.5, work: 5078, workPct: 52.8, old: 3620, oldPct: 37.7, lateOld: 2339 },
+      { year: 2070, type: "推計", total: 8700, youth: 798, youthPct: 9.2, work: 4535, workPct: 52.1, old: 3367, oldPct: 38.7, lateOld: 2216 }
+    ];
+
+    // Scenario Data for 2070
+    const scenarios = {
+      medium: {
+        badge: "標準シナリオ",
+        title: "出生中位・死亡中位 推計",
+        desc: "合計特殊出生率 1.36 / 平均寿命 男 85.89歳・女 91.94歳",
+        pop: "8,700万人",
+        aging: "38.7%",
+        prod: "52.1%"
+      },
+      high: {
+        badge: "出生回復シナリオ",
+        title: "出生高位・死亡中位 推計",
+        desc: "合計特殊出生率 1.64 / 平均寿命 男 85.89歳・女 91.94歳",
+        pop: "9,549万人",
+        aging: "35.3%",
+        prod: "52.6%"
+      },
+      low: {
+        badge: "少子化加速シナリオ",
+        title: "出生低位・死亡中位 推計",
+        desc: "合計特殊出生率 1.13 / 平均寿命 男 85.89歳・女 91.94歳",
+        pop: "8,024万人",
+        aging: "42.0%",
+        prod: "51.8%"
+      },
+      max_aging: {
+        badge: "最大高齢化シナリオ",
+        title: "出生低位・死亡低位 推計",
+        desc: "合計特殊出生率 1.13 / 長寿化進行（男 87.23歳・女 93.30歳）",
+        pop: "7,833万人",
+        aging: "43.2%",
+        prod: "50.9%"
+      },
+      max_pop: {
+        badge: "最大人口シナリオ",
+        title: "出生高位・死亡低位 推計",
+        desc: "合計特殊出生率 1.64 / 長寿化進行（男 87.23歳・女 93.30歳）",
+        pop: "9,744万人",
+        aging: "36.4%",
+        prod: "52.5%"
+      }
+    };
+
+    // Tab Navigation
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const tabContents = document.querySelectorAll(".tab-content");
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const targetTab = btn.getAttribute("data-tab");
+        tabButtons.forEach(b => {
+          b.classList.remove("tab-active", "text-blue-600");
+          b.classList.add("text-slate-600");
+        });
+        btn.classList.add("tab-active");
+        btn.classList.remove("text-slate-600");
+
+        tabContents.forEach(content => {
+          if (content.id === `tab-${targetTab}`) {
+            content.classList.remove("hidden");
+          } else {
+            content.classList.add("hidden");
+          }
+        });
+      });
+    });
+
+    // Populate Data Table
+    const tableBody = document.getElementById("table-body");
+    function renderTable(filter = "all") {
+      tableBody.innerHTML = "";
+      const filtered = dataset.filter(item => {
+        if (filter === "hist") return item.type === "実績";
+        if (filter === "proj") return item.type === "推計";
+        return true;
+      });
+
+      filtered.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition-colors";
+        const isHighlight = row.year === 2024 || row.year === 2070;
+        if (isHighlight) tr.classList.add("bg-blue-50/50", "font-medium");
+
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 font-bold ${row.year === 2024 ? 'text-blue-600' : 'text-slate-900'}">${row.year}年</td>
+          <td class="py-2.5 px-3">
+            <span class="px-2 py-0.5 rounded text-[11px] font-semibold ${row.type === '実績' ? 'bg-slate-100 text-slate-700' : 'bg-indigo-100 text-indigo-700'}">
+              ${row.type}
+            </span>
+          </td>
+          <td class="py-2.5 px-3 text-right font-semibold text-slate-900">${row.total.toLocaleString()}</td>
+          <td class="py-2.5 px-3 text-right text-purple-700">${row.youth.toLocaleString()}</td>
+          <td class="py-2.5 px-3 text-right text-slate-600">${row.youthPct}%</td>
+          <td class="py-2.5 px-3 text-right text-blue-700">${row.work.toLocaleString()}</td>
+          <td class="py-2.5 px-3 text-right text-slate-600">${row.workPct}%</td>
+          <td class="py-2.5 px-3 text-right text-amber-700">${row.old.toLocaleString()}</td>
+          <td class="py-2.5 px-3 text-right font-bold text-amber-700">${row.oldPct}%</td>
+          <td class="py-2.5 px-3 text-right text-rose-600">${row.lateOld ? row.lateOld.toLocaleString() : '-'}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+    renderTable();
+
+    // Table Filter Handlers
+    const filterAllBtn = document.getElementById("filter-all-btn");
+    const filterHistBtn = document.getElementById("filter-hist-btn");
+    const filterProjBtn = document.getElementById("filter-proj-btn");
+    const filterBtns = [filterAllBtn, filterHistBtn, filterProjBtn];
+
+    function setFilterActive(activeBtn) {
+      filterBtns.forEach(btn => {
+        btn.className = "filter-btn px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 text-slate-700 hover:bg-slate-200";
+      });
+      activeBtn.className = "filter-btn px-2.5 py-1 text-xs font-semibold rounded bg-blue-600 text-white";
+    }
+
+    filterAllBtn.addEventListener("click", () => {
+      setFilterActive(filterAllBtn);
+      renderTable("all");
+    });
+    filterHistBtn.addEventListener("click", () => {
+      setFilterActive(filterHistBtn);
+      renderTable("hist");
+    });
+    filterProjBtn.addEventListener("click", () => {
+      setFilterActive(filterProjBtn);
+      renderTable("proj");
+    });
+
+    // CSV Download
+    document.getElementById("download-csv-btn").addEventListener("click", () => {
+      const headers = ["年次", "区分", "総人口(万人)", "年少人口(0-14歳)", "年少比率(%)", "生産年齢人口(15-64歳)", "生産年齢比率(%)", "老年人口(65歳以上)", "高齢化率(%)", "75歳以上人口(万人)"];
+      const rows = dataset.map(d => [
+        d.year,
+        d.type,
+        d.total,
+        d.youth,
+        d.youthPct,
+        d.work,
+        d.workPct,
+        d.old,
+        d.oldPct,
+        d.lateOld || ""
+      ]);
+
+      let csvContent = "\uFEFF" + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "japan_demographics_1950_2070.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // Print
+    document.getElementById("print-btn").addEventListener("click", () => {
+      window.print();
+    });
+
+    // Scenario Dropdown Change
+    const scenarioSelect = document.getElementById("scenario-select");
+    scenarioSelect.addEventListener("change", (e) => {
+      const sc = scenarios[e.target.value];
+      document.getElementById("sc-badge").textContent = sc.badge;
+      document.getElementById("sc-title").textContent = sc.title;
+      document.getElementById("sc-desc").textContent = sc.desc;
+      document.getElementById("sc-pop").textContent = sc.pop;
+      document.getElementById("sc-aging").textContent = sc.aging;
+      document.getElementById("sc-prod").textContent = sc.prod;
+    });
+
+    // Charts Initialization
+    window.addEventListener("DOMContentLoaded", () => {
+      const labels = dataset.map(d => d.year + "年");
+
+      // Chart 1: Age Trend (Lines)
+      const ctxAgeTrend = document.getElementById("ageTrendChart").getContext("2d");
+      new Chart(ctxAgeTrend, {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "総人口",
+              data: dataset.map(d => d.total),
+              borderColor: "#1e293b",
+              backgroundColor: "#1e293b",
+              borderWidth: 2.5,
+              tension: 0.2,
+              pointRadius: 3
+            },
+            {
+              label: "生産年齢人口 (15〜64歳)",
+              data: dataset.map(d => d.work),
+              borderColor: "#3b82f6",
+              backgroundColor: "rgba(59, 130, 246, 0.1)",
+              borderWidth: 2,
+              fill: true,
+              tension: 0.2,
+              pointRadius: 3
+            },
+            {
+              label: "老年人口 (65歳以上)",
+              data: dataset.map(d => d.old),
+              borderColor: "#f59e0b",
+              backgroundColor: "rgba(245, 158, 11, 0.1)",
+              borderWidth: 2,
+              fill: true,
+              tension: 0.2,
+              pointRadius: 3
+            },
+            {
+              label: "年少人口 (0〜14歳)",
+              data: dataset.map(d => d.youth),
+              borderColor: "#a855f7",
+              backgroundColor: "rgba(168, 85, 247, 0.1)",
+              borderWidth: 2,
+              fill: true,
+              tension: 0.2,
+              pointRadius: 3
+            },
+            {
+              label: "（再掲）75歳以上",
+              data: dataset.map(d => d.lateOld),
+              borderColor: "#f43f5e",
+              borderDash: [4, 4],
+              borderWidth: 2,
+              tension: 0.2,
+              pointRadius: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.raw ? context.raw.toLocaleString() + '万人' : 'データなし'}`;
+                }
+              }
+            },
+            legend: {
+              position: "top",
+              labels: { boxWidth: 12, font: { size: 11 } }
+            }
+          },
+          scales: {
+            y: {
+              title: { display: true, text: "人口（万人）", font: { size: 11 } },
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+      // Chart 2: Age Ratio (100% Stacked Bar)
+      const ctxAgeRatio = document.getElementById("ageRatioChart").getContext("2d");
+      new Chart(ctxAgeRatio, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "0〜14歳割合",
+              data: dataset.map(d => d.youthPct),
+              backgroundColor: "#a855f7"
+            },
+            {
+              label: "15〜64歳割合",
+              data: dataset.map(d => d.workPct),
+              backgroundColor: "#3b82f6"
+            },
+            {
+              label: "65歳以上割合（高齢化率）",
+              data: dataset.map(d => d.oldPct),
+              backgroundColor: "#f59e0b"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.raw}%`;
+                }
+              }
+            },
+            legend: {
+              position: "top",
+              labels: { boxWidth: 12, font: { size: 11 } }
+            }
+          },
+          scales: {
+            x: { stacked: true },
+            y: {
+              stacked: true,
+              max: 100,
+              title: { display: true, text: "構成比率 (%)", font: { size: 11 } }
+            }
+          }
+        }
+      });
+
+      // Chart 3: Gender Comparison (2024 Estimates)
+      const ctxGender = document.getElementById("genderComparisonChart").getContext("2d");
+      new Chart(ctxGender, {
+        type: "bar",
+        data: {
+          labels: ["15歳未満 (年少)", "15〜64歳 (生産年齢)", "65歳以上 (高齢者)", "（再掲）75歳以上"],
+          datasets: [
+            {
+              label: "男性 (万人)",
+              data: [709, 3745, 1568, 865],
+              backgroundColor: "#3b82f6"
+            },
+            {
+              label: "女性 (万人)",
+              data: [674, 3628, 2051, 1213],
+              backgroundColor: "#ec4899"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(c) {
+                  return `${c.dataset.label}: ${c.raw.toLocaleString()}万人`;
+                }
+              }
+            },
+            legend: { position: "top", labels: { boxWidth: 12 } }
+          },
+          scales: {
+            y: {
+              title: { display: true, text: "人口（万人）" },
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+      // Chart 4: Foreign Population Projections
+      const ctxForeign = document.getElementById("foreignPopulationChart").getContext("2d");
+      new Chart(ctxForeign, {
+        type: "bar",
+        data: {
+          labels: ["2020年", "2030年", "2040年", "2050年", "2060年", "2070年"],
+          datasets: [
+            {
+              type: "bar",
+              label: "外国人人口 (万人)",
+              data: [275, 410, 560, 729, 840, 939],
+              backgroundColor: "#6366f1",
+              yAxisID: "y"
+            },
+            {
+              type: "line",
+              label: "外国人割合 (%)",
+              data: [2.2, 3.4, 5.0, 7.0, 8.7, 10.8],
+              borderColor: "#f43f5e",
+              backgroundColor: "#f43f5e",
+              borderWidth: 2,
+              pointRadius: 4,
+              yAxisID: "y1"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "top", labels: { boxWidth: 12 } }
+          },
+          scales: {
+            y: {
+              title: { display: true, text: "外国人人口（万人）" },
+              beginAtZero: true
+            },
+            y1: {
+              position: "right",
+              title: { display: true, text: "総人口比率 (%)" },
+              grid: { drawOnChartArea: false },
+              beginAtZero: true,
+              max: 15
+            }
+          }
+        }
+      });
+
+      // Chart 5: Household Structure Chart
+      const ctxHousehold = document.getElementById("householdStructureChart").getContext("2d");
+      new Chart(ctxHousehold, {
+        type: "line",
+        data: {
+          labels: ["1990年", "2000年", "2010年", "2020年", "2030年", "2040年", "2050年"],
+          datasets: [
+            {
+              label: "単身世帯割合 (%)",
+              data: [23.1, 27.6, 32.4, 38.0, 40.5, 42.6, 44.3],
+              borderColor: "#ec4899",
+              backgroundColor: "rgba(236, 72, 153, 0.1)",
+              fill: true,
+              borderWidth: 2.5,
+              tension: 0.2
+            },
+            {
+              label: "高齢単身世帯（全世帯比 %）",
+              data: [4.0, 6.7, 10.0, 13.2, 16.5, 18.9, 20.6],
+              borderColor: "#f97316",
+              borderDash: [5, 5],
+              borderWidth: 2,
+              tension: 0.2
+            },
+            {
+              label: "夫婦と子 世帯割合 (%)",
+              data: [39.5, 34.2, 29.5, 25.1, 23.4, 22.3, 21.5],
+              borderColor: "#3b82f6",
+              borderWidth: 2,
+              tension: 0.2
+            },
+            {
+              label: "夫婦のみ 世帯割合 (%)",
+              data: [17.5, 18.9, 19.8, 20.1, 20.8, 20.5, 19.8],
+              borderColor: "#10b981",
+              borderWidth: 2,
+              tension: 0.2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "top", labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: function(c) { return `${c.dataset.label}: ${c.raw}%`; }
+              }
+            }
+          },
+          scales: {
+            y: {
+              title: { display: true, text: "全世帯に占める割合 (%)" },
+              min: 0,
+              max: 50
+            }
+          }
+        }
+      });
+
+      // Chart 6 & 7: 2070 Scenario Charts
+      const scenarioKeys = ["出生高位(死亡低)", "出生高位(死亡中)", "出生中位(死亡中)", "出生低位(死亡中)", "出生低位(死亡高)"];
+      const scenarioPops = [9744, 9549, 8700, 8024, 7833];
+      const scenarioAgings = [36.4, 35.3, 38.7, 42.0, 43.2];
+
+      const ctxScPop = document.getElementById("scenarioPopChart").getContext("2d");
+      new Chart(ctxScPop, {
+        type: "bar",
+        data: {
+          labels: scenarioKeys,
+          datasets: [{
+            label: "2070年推計総人口 (万人)",
+            data: scenarioPops,
+            backgroundColor: ["#3b82f6", "#60a5fa", "#2563eb", "#93c5fd", "#cbd5e1"]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { title: { display: true, text: "人口（万人）" }, min: 6000, max: 11000 }
+          }
+        }
+      });
+
+      const ctxScAging = document.getElementById("scenarioAgingChart").getContext("2d");
+      new Chart(ctxScAging, {
+        type: "bar",
+        data: {
+          labels: scenarioKeys,
+          datasets: [{
+            label: "2070年高齢化率 (%)",
+            data: scenarioAgings,
+            backgroundColor: ["#f59e0b", "#fbbf24", "#d97706", "#b45309", "#78350f"]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { title: { display: true, text: "高齢化率 (%)" }, min: 30, max: 50 }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
